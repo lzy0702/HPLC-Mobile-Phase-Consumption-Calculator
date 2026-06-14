@@ -151,7 +151,11 @@ body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0;
         <div style="font-weight: bold; font-size: 18px;">{{ t('title') }}</div>
         <div style="display: flex; gap: 8px;">
             <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" accept=".csv,.txt,.xls,.xlsx,.xml">
-            <button class="btn" style="background:#0050b3;" @click="toggleLang">🌐 {{ currentLang === 'zh' ? 'EN / 中英切换' : 'ZH / 中英切换' }}</button>
+            <button class="btn" style="background:#0050b3;" @click="toggleLang">🌐 {{ currentLang === 'zh' ? 'EN' : '中文' }}</button>
+            <button class="btn" style="background:#52c41a;" @click="docsModal.showHelp = true">❓ {{ t('btnHelp') }}</button>
+            <button class="btn" style="background:#fa8c16;" @click="docsModal.showChangelog = true">📜 {{ t('btnChangelog') }}</button>
+            <div style="width: 1px; background: #ddd; margin: 0 4px;"></div>
+            
             <button class="btn" style="background:#722ed1;" @click="openCurveGuide">📊 {{ t('btnCurveGuide') }}</button>
             <button class="btn" @click="$refs.fileInput.click()">📂 {{ t('btnImport') }}</button>
             <button class="btn" @click="exportGradientTable">{{ t('btnExport') }}</button>
@@ -162,9 +166,7 @@ body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0;
         </div>
     </div>
 
-    <div v-if="!isDataValid" class="alert-banner" style="flex-shrink: 0;">
-        ⚠️ {{ t('errSum') }}
-    </div>
+    <div v-if="!isDataValid" class="alert-banner" style="flex-shrink: 0;">⚠️ {{ t('errSum') }}</div>
     <div v-if="autoFillPrompt.show" class="alert-banner" style="flex-shrink: 0; background: #e6f7ff; border-color: #91d5ff; color: #0958d9; display: flex; justify-content: space-between; align-items: center; text-align: left; font-weight: normal;">
         <div>💡 <b>{{ t('hint') }}</b>{{ autoFillPrompt.message }}</div>
         <div style="flex-shrink: 0; margin-left: 20px;">
@@ -199,7 +201,6 @@ body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0;
         </div>
 
         <div class="panel center-panel" :style="{ width: centerPanelWidth + '%' }" style="position: relative; flex: none; display: flex; flex-direction: column; min-width: 500px; max-width: 80%; overflow: hidden; background: transparent; box-shadow: none; border-right: 3px dashed #d9d9d9; padding-right: 8px;">
-            
             <div class="panel" :style="{ height: centerTopHeight + '%' }" style="flex: none; min-height: 250px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
                 <div style="padding: 5px 15px; background: #fafafa; border-bottom: 1px solid #ddd; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; gap: 15px; align-items: center;">
@@ -353,6 +354,41 @@ body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0;
             </div>
         </div>
     </div>
+    
+    <div class="modal-overlay" v-if="docsModal.showHelp">
+        <div class="modal" style="width: 800px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h3 style="margin: 0;">❓ {{ t('btnHelp') }}</h3>
+                <button class="btn" style="background:#888;" @click="docsModal.showHelp = false">{{ t('close') }}</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; line-height: 1.6; font-size: 14px; padding-right: 10px;">
+                <div v-for="(sec, idx) in docsData.help" :key="idx" style="margin-bottom: 20px;">
+                    <h4 style="color: #0050b3; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">{{ sec.title }}</h4>
+                    <p style="margin-top: 5px; color: #444;" v-html="sec.content"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="docsModal.showChangelog">
+        <div class="modal" style="width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h3 style="margin: 0;">📜 {{ t('btnChangelog') }}</h3>
+                <button class="btn" style="background:#888;" @click="docsModal.showChangelog = false">{{ t('close') }}</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; padding-right: 10px;">
+                <div v-for="(log, idx) in docsData.changelog" :key="idx" style="margin-bottom: 20px; border: 1px solid #e8e8e8; border-radius: 6px; padding: 15px; background: #fafafa;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #1890ff; font-size: 16px;">{{ log.version }} - {{ log.title }}</h4>
+                        <span style="color: #888; font-size: 12px; font-weight: bold;">{{ log.date }}</span>
+                    </div>
+                    <ul style="margin: 0; padding-left: 20px; color: #555; font-size: 13px; line-height: 1.8;">
+                        <li v-for="(change, i) in log.changes" :key="i" v-html="change"></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
     
     <script>
@@ -377,6 +413,7 @@ body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0;
         const deleteHistoryDB = async (id) => { const db = await initDB(); return new Promise(res => { db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).delete(id).onsuccess = () => res(); }); };
         const updateHistoryDB = async (record) => { const db = await initDB(); return new Promise(res => { db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(record).onsuccess = () => res(); }); };
     </script>
+    
     <script>// src/utils.js
 const ChromUtils = {
     validateRowSum(a, b, c, d) {
@@ -535,6 +572,74 @@ const ChromUtils = {
         return start + (end - start) * factor;
     }
 };</script>
+    <script>// src/docs.js
+const AppDocs = {
+    changelog: [
+        {
+            version: "v1.0.0",
+            date: "2026-06-14",
+            title: { zh: "Initial Release (首发正式版)", en: "Initial Release" },
+            changes: {
+                zh: [
+                    "✨ 完整的中英双语国际化支持，支持无缝热切换。",
+                    "✨ 全新弹性三栏布局，加入隐形全高度拖拽柄，支持各个工作区无级拉伸缩放。",
+                    "📈 纯数据驱动的 ECharts 智能自适应 Y 轴：彻底解决由于双轴引发的缩放冲突与浮点数精度截断问题。",
+                    "📈 增强的坐标轴漫游功能：支持图表内鼠标滚轮缩放与鼠标左键直接拖拽平移。",
+                    "💾 彻底重构的历史记录管理：基于 IndexedDB 构建，支持按名称/日期实时搜索、记录重命名、记录删除。",
+                    "⚡ 修复底层 C++ WebAssembly 积分引擎末端可能出现垃圾内存导致曲线坠落至 0 的问题。",
+                    "🔧 开放流速上限自定义输入，支持微纳升色谱（mL/min, µL/min, nL/min, L/min）单位一键切换配置。"
+                ],
+                en: [
+                    "✨ Full bilingual (ZH/EN) internationalization with seamless hot-switching.",
+                    "✨ New elastic three-column layout featuring invisible full-height resize handles for seamless workspace scaling.",
+                    "📈 Data-driven ECharts Smart Auto Y-Axis: Fixed scaling conflicts and floating-point precision issues on dual axes.",
+                    "📈 Enhanced chart roaming: Scroll to zoom and left-click drag to pan directly inside the charts.",
+                    "💾 Fully refactored History Manager: Built on IndexedDB, supporting real-time search, rename, and deletion.",
+                    "⚡ Fixed an issue in the C++ WebAssembly integration engine where residual memory caused trailing ends to drop to 0.",
+                    "🔧 Added custom Max Flow input, supporting one-click unit presets for Micro/Nano LC (mL/min, µL/min, nL/min, L/min)."
+                ]
+            }
+        }
+    ],
+    help: {
+        zh: [
+            {
+                title: "1. 界面与布局调整",
+                content: "工作站采用弹性三栏布局（历史记录、梯度参数表、消耗量图）。您可以通过鼠标放置在两个区域之间的虚线边缘（鼠标变为双向箭头时）按住拖拽，自由调整区域宽度。梯度预览图下方也设有横条可调节高度。"
+            },
+            {
+                title: "2. 运行参数说明",
+                content: "<b>流速单位与上限：</b>支持常规 LC 与 Nano-LC。切换单位将自动调整典型流速上限（例如 mL/min 对应 5.0），您也可手动指定上限。<br><b>进样数 (Inj Count)：</b>设置连续运行该方法的总进样针数。<br><b>准备期 (Prep Time)：</b>进样前的系统平衡时间。此段时间将维持表中的第一行初始状态。<br><b>主通道补齐：</b>点击“补齐主通道”按钮，系统会自动计算 100% 减去其他通道的差值，并填充至您指定的“主通道”列中。"
+            },
+            {
+                title: "3. 图表漫游与自适应 Y 轴",
+                content: "<b>框选与平移：</b>在图表区域内滚动鼠标滚轮即可放大/缩小；长按鼠标左键可直接拖拽平移视图。<br><b>自适应 Y 轴：</b>开启后，Y 轴范围将根据当前屏幕内可见曲线的实际最高/最低点自动缩放。如果您手动拉拽了坐标轴旁的滑动条，系统会认为您需要手动控制，从而自动关闭自适应功能。"
+            },
+            {
+                title: "4. 计算引擎与曲线模型",
+                content: "底层由 C++ 编写并通过 WebAssembly 加速，模拟精度可达微秒级。系统完全支持 Waters 设定的 1 至 11 型曲线解析（包含线性、阶跃、凸/凹曲线），并在离散时间序列之间应用了严格的高阶多项式插值积分计算。"
+            }
+        ],
+        en: [
+            {
+                title: "1. UI & Layout Adjustments",
+                content: "The workstation uses an elastic three-column layout (History, Gradient Table, Consumption Plot). You can drag the invisible boundary areas (dashed lines) between panels to freely resize the width. The gradient preview plot can also be vertically resized."
+            },
+            {
+                title: "2. Operational Parameters",
+                content: "<b>Flow Unit & Max Limit:</b> Supports standard LC to Nano-LC. Switching units automatically adjusts the typical max limit (e.g., 5.0 for mL/min), which can also be customized.<br><b>Inj Count:</b> The total number of consecutive injections for the simulation.<br><b>Prep Time:</b> Equilibration time before injection. Maintains the initial state of row 1.<br><b>Auto-Fill Main:</b> Calculates 100% minus the sum of other channels and fills the remainder into your designated 'Main Channel'."
+            },
+            {
+                title: "3. Chart Roaming & Auto Y-Axis",
+                content: "<b>Zoom & Pan:</b> Scroll the mouse wheel inside the chart to zoom in/out; left-click and drag to pan the view.<br><b>Auto Y-Axis:</b> When enabled, the Y-axis strictly bounds to the min/max values of the currently visible curves on screen. Manually dragging the slider will automatically disable Auto-Y to grant you manual control."
+            },
+            {
+                title: "4. Calculation Engine & Curve Models",
+                content: "The underlying integration engine is written in C++ and compiled to WebAssembly for microsecond precision. It fully supports Waters Curve profiles 1 to 11 (Linear, Step, Convex, Concave), employing strict polynomial interpolation and numerical integration between discrete time sequences."
+            }
+        ]
+    }
+};</script>
     <script>// src/app.js
 const { createApp, ref, reactive, onMounted, nextTick, computed } = Vue;
 
@@ -545,6 +650,7 @@ createApp({
             zh: {
                 title: "液相色谱流动相消耗量工作站",
                 btnCurveGuide: "曲线对照图", btnImport: "导入梯度表", btnExport: "导出梯度表", btnSave: "保存记录",
+                btnHelp: "帮助文档", btnChangelog: "更新历史",
                 btnRun: "▶ 计算", btnFixError: "请先修复表格错误", btnLoading: "引擎加载中...",
                 errSum: "错误：检测到某些行的流动相组成之和不等于 100%，请在表格中修正带红色背景的行。",
                 hint: "智能提示：", updateNow: "立刻更新", notNow: "暂时不更新",
@@ -555,7 +661,7 @@ createApp({
                 flowUnit: "流速单位:", maxLimit: "上限:", autoSort: "自动排序", sortWarn: "⚠️ 乱序重排",
                 injCount: "进样数:", prepTime: "准备期:", mainChannel: "主通道:", autoFillMain: "补齐主通道",
                 gradPreview: "梯度与流速预览", resetZoom: "[ 一键全图 ]", autoY: "自适应Y轴",
-                consumpSim: "消耗量模拟 (高精度)", total: "Total:", waitingCalc: "(等待执行计算)",
+                consumpSim: "消耗量模拟 (高精度)", total: "总计:", waitingCalc: "(等待执行计算)",
                 close: "关闭", filePreview: "文件解析预览", cancel: "取消", confirmLoad: "确认并载入",
                 curveMatch: "Waters 1-11 型梯度曲线对照图",
                 colSelect: "选择", colTime: "Time\n(min)", colFlow: "Flow\n", 
@@ -572,7 +678,8 @@ createApp({
             en: {
                 title: "LC Consumption Calculator",
                 btnCurveGuide: "Curve Guide", btnImport: "Import Gradient", btnExport: "Export Table", btnSave: "Save Record",
-                btnRun: "▶ Run Integration", btnFixError: "Fix Table Errors", btnLoading: "Loading Engine...",
+                btnHelp: "Help Docs", btnChangelog: "Changelog",
+                btnRun: "▶ Calculate", btnFixError: "Fix Table Errors", btnLoading: "Loading Engine...",
                 errSum: "Error: Mobile phase sum is not 100%. Please fix rows with red background.",
                 hint: "Smart Hint: ", updateNow: "Update Now", notNow: "Not Now",
                 history: "History", searchHistory: "🔍 Search name or date...", noRecord: "No records found",
@@ -598,6 +705,19 @@ createApp({
             }
         };
         const t = (key) => locales[currentLang.value][key] || key;
+
+        // 【新增模块】获取双语文档数据
+        const docsModal = reactive({ showHelp: false, showChangelog: false });
+        const docsData = computed(() => {
+            if (typeof AppDocs === 'undefined') return { help: [], changelog: [] };
+            const lang = currentLang.value;
+            const logList = AppDocs.changelog.map(log => ({
+                version: log.version, date: log.date,
+                title: log.title[lang] || log.title['zh'],
+                changes: log.changes[lang] || log.changes['zh']
+            }));
+            return { help: AppDocs.help[lang] || AppDocs.help['zh'], changelog: logList };
+        });
 
         const isEngineReady = ref(false);
         const isDataValid = ref(true);
@@ -1034,7 +1154,6 @@ createApp({
             let runData = ChromUtils.buildRunTable(normData, config.waitTime);
             cachedGradientData = ChromUtils.generatePreviewCurve(runData, 1000);
 
-            // 【完全统一项颜色与坐标轴自适应底宽】
             gradientChartInstance.setOption({
                 tooltip: { trigger: 'axis', valueFormatter: (val) => Number(val).toFixed(3) }, 
                 legend: { show: false, selected: { 'Flow': chartConfig.visibleGradient['Flow'], [t('serChA')]: chartConfig.visibleGradient['A'], [t('serChB')]: chartConfig.visibleGradient['B'], [t('serChC')]: chartConfig.visibleGradient['C'], [t('serChD')]: chartConfig.visibleGradient['D'] } },
@@ -1119,10 +1238,7 @@ createApp({
                 for(let i = 5; i < resultElementsLength; i += 6) {
                     const t = heapF64[resultStartIndex + i]; const totalVol = heapF64[resultStartIndex + i + 1];
                     if (isNaN(t) || isNaN(totalVol)) break; 
-                    
-                    // 【绝对时间锁】彻底切断未清理内存残留带来的 0 坠落异常
-                    if (i > 5 && t <= lastRawT) break;
-
+                    if (i > 5 && t <= lastRawT) break; // 拦截垃圾坠落内存
                     if (lastRawT !== -1 && t < lastRawT) { cycleCount++; if (cycleCount > config.injCount) break; timeOffset += maxIterationT; maxIterationT = 0; }
                     lastRawT = t; if (t > maxIterationT) maxIterationT = t;
                     const accumulatedTime = t + timeOffset; if (accumulatedTime > maxExpectedTime + 0.05) break; 
@@ -1137,7 +1253,6 @@ createApp({
             if (!consumptionChartInstance) { consumptionChartInstance = echarts.init(document.getElementById('consumption-chart-container')); }
             let globalMaxVol = 0; data.forEach(r => { globalMaxVol = Math.max(globalMaxVol, r[1], r[2], r[3], r[4], r[5]); }); if(globalMaxVol === 0) globalMaxVol = 1;
 
-            // 【完全统一项颜色与坐标轴自适应底宽】
             consumptionChartInstance.setOption({
                 tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, valueFormatter: (val) => Number(val).toFixed(3) }, 
                 legend: { show: false, selected: { [t('serTotal')]: chartConfig.visibleConsumption['Total'], [t('serChA')]: chartConfig.visibleConsumption['ChA'], [t('serChB')]: chartConfig.visibleConsumption['ChB'], [t('serChC')]: chartConfig.visibleConsumption['ChC'], [t('serChD')]: chartConfig.visibleConsumption['ChD'] } },
@@ -1201,7 +1316,7 @@ createApp({
         locales.en.hintMsg = (row, ch, val) => `Row ${row} mobile phase sum is not 100%. Auto-fill Main Channel (${ch}) to ${val}%?`;
 
         return { 
-            t, currentLang, toggleLang,
+            t, currentLang, toggleLang, docsModal, docsData,
             isEngineReady, isDataValid, hasResult, config, chartConfig, centerPanelWidth, centerTopHeight, startHorizontalResize, startVerticalResize,
             applyGradientY, applyConsumptionY, resetGradientZoom, resetConsumptionZoom, 
             applyGradientLegend, applyConsumptionLegend, handleFlowUnitChange,
